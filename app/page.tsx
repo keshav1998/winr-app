@@ -1,7 +1,66 @@
+"use client";
+import { useState } from "react";
 import { ConnectButton } from "thirdweb/react";
 import { client } from "./thirdweb/client";
+import { useKyc, useDeposits, useMintGate } from "./hooks/useKyc";
+import { useToast } from "./(components)/feedback";
 
 export default function Home() {
+  const { addToast } = useToast();
+  const [fiatAmount, setFiatAmount] = useState<string>("");
+  const [depositId, setDepositId] = useState<string | null>(null);
+
+  const { kycApproved, kycStatus } = useKyc();
+  const { create } = useDeposits();
+  const { mintEnabled, readyToMint, startDepositPolling } = useMintGate({ depositId });
+
+  const onConfirmDeposit = async () => {
+    if (!kycApproved) {
+      addToast({ kind: "warning", title: "KYC required", description: "Complete KYC before depositing." });
+      return;
+    }
+    if (!fiatAmount || Number(fiatAmount) <= 0) {
+      addToast({ kind: "error", title: "Invalid amount", description: "Enter a positive deposit amount." });
+      return;
+    }
+    try {
+      const dep = await create({ amount: fiatAmount, currency: "INR" });
+      setDepositId(dep.id);
+      addToast({ kind: "info", title: "Deposit pending", description: "We are confirming your deposit..." });
+      startDepositPolling(dep.id, (d) => {
+        if (d.readyToMint) {
+          addToast({ kind: "success", title: "Deposit confirmed", description: "You can now mint wINR." });
+        }
+      });
+    } catch (e) {
+      addToast({ kind: "error", title: "Deposit failed", description: String((e as Error).message) });
+    }
+  };
+
+  const onMint = async () => {
+    if (!mintEnabled) {
+      addToast({ kind: "warning", title: "Mint not ready", description: "Wait for deposit confirmation and KYC approval." });
+      return;
+    }
+    addToast({ kind: "success", title: "Mint", description: "Mint transaction would be executed here." });
+  };
+
+  const onSwap = () => {
+    if (!kycApproved) {
+      addToast({ kind: "warning", title: "KYC required", description: "Complete KYC to swap." });
+      return;
+    }
+    addToast({ kind: "info", title: "Swap", description: "Swap flow will be integrated with Uniswap v4." });
+  };
+
+  const onRedeem = () => {
+    if (!kycApproved) {
+      addToast({ kind: "warning", title: "KYC required", description: "Complete KYC to redeem." });
+      return;
+    }
+    addToast({ kind: "info", title: "Redeem", description: "Redeem will burn wINR then trigger CBDC payout." });
+  };
+
   return (
     <div className="min-h-screen p-6 sm:p-10">
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
@@ -20,12 +79,24 @@ export default function Home() {
 
         <section className="col-span-1 rounded-xl border border-black/10 dark:border-white/10 p-4">
           <h2 className="font-medium mb-3">KYC / Status</h2>
-          <div className="inline-flex items-center gap-2 rounded-full bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 px-3 py-1 text-xs">
-            <span className="size-2 rounded-full bg-yellow-500" />
-            KYC Pending
-          </div>
+          {kycStatus === "approved" ? (
+            <div className="inline-flex items-center gap-2 rounded-full bg-green-500/10 text-green-700 dark:text-green-300 px-3 py-1 text-xs">
+              <span className="size-2 rounded-full bg-green-500" />
+              KYC Approved
+            </div>
+          ) : kycStatus === "rejected" ? (
+            <div className="inline-flex items-center gap-2 rounded-full bg-red-500/10 text-red-700 dark:text-red-300 px-3 py-1 text-xs">
+              <span className="size-2 rounded-full bg-red-500" />
+              KYC Rejected
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-2 rounded-full bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 px-3 py-1 text-xs">
+              <span className="size-2 rounded-full bg-yellow-500" />
+              KYC Pending
+            </div>
+          )}
           <p className="text-xs mt-2 text-foreground/60">
-            You’ll be able to mint and swap once KYC is approved.
+            {kycApproved ? "You can proceed with minting and swapping." : "You’ll be able to mint and swap once KYC is approved."}
           </p>
         </section>
 
@@ -53,18 +124,20 @@ export default function Home() {
               type="number"
               placeholder="Amount (INR)"
               className="w-full rounded-md border px-3 py-2 text-sm bg-transparent"
-              disabled
+              value={fiatAmount}
+              onChange={(e) => setFiatAmount(e.target.value)}
+              disabled={!kycApproved}
             />
             <div className="flex gap-2">
-              <button type="button" className="rounded-md border px-3 py-2 text-sm" disabled>
+              <button type="button" className="rounded-md border px-3 py-2 text-sm" disabled={!kycApproved || !fiatAmount} onClick={onConfirmDeposit}>
                 Confirm Deposit
               </button>
-              <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm" disabled>
+              <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm" disabled={!mintEnabled} onClick={onMint}>
                 Mint wINR
               </button>
             </div>
             <p className="text-xs text-foreground/60">
-              Disabled until KYC is approved and deposit is confirmed.
+              {kycApproved ? (readyToMint ? "Deposit confirmed. You can mint now." : "Waiting for deposit confirmation...") : "Disabled until KYC is approved and deposit is confirmed."}
             </p>
           </div>
         </section>
@@ -89,7 +162,7 @@ export default function Home() {
               placeholder="Amount"
               className="w-full rounded-md border px-3 py-2 text-sm bg-transparent"
             />
-            <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm">
+            <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm" disabled={!kycApproved} onClick={onSwap}>
               Get Quote & Swap
             </button>
             <p className="text-xs text-foreground/60">
@@ -106,7 +179,7 @@ export default function Home() {
               placeholder="Amount (wINR)"
               className="w-full rounded-md border px-3 py-2 text-sm bg-transparent"
             />
-            <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm">
+            <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm" disabled={!kycApproved} onClick={onRedeem}>
               Burn & Redeem e₹
             </button>
             <p className="text-xs text-foreground/60">

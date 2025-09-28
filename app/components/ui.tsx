@@ -30,8 +30,7 @@ export function Spinner({
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      role="status"
-      aria-label="Loading"
+      aria-hidden="true"
     >
       <circle
         className="opacity-25"
@@ -172,7 +171,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               "w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none placeholder:text-foreground/40",
               "border-black/10 focus-visible:ring-2 focus-visible:ring-foreground/20 dark:border-white/15",
               error && "border-red-500 focus-visible:ring-red-500/20",
-              rightAddon && "pr-10",
+              rightAddon ? "pr-10" : undefined,
               className,
             )}
             aria-invalid={Boolean(error)}

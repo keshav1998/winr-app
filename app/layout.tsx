@@ -2,6 +2,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThirdwebProvider } from "thirdweb/react";
+import { ToastProvider, Toaster, ErrorBoundary } from "./(components)/feedback";
 
 
 const geistSans = Geist({
@@ -27,7 +28,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThirdwebProvider>
-          {children}
+          <ToastProvider>
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+            <Toaster position="bottom-right" />
+          </ToastProvider>
         </ThirdwebProvider>
       </body>
     </html>
