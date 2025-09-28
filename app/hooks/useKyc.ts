@@ -71,7 +71,7 @@ export type DepositRecord = {
   nextAction?: "mint_available" | "contact_support" | "wait_for_bank";
 };
 
-type ApiResponse<T> = { ok: true; data: T } | { ok: false; error: string };
+
 
 /* =========================================
  * Utilities
@@ -101,12 +101,22 @@ async function fetchJson<T>(
       cache: "no-store",
     });
 
-    const json = (await res.json()) as ApiResponse<T>;
-    if (!res.ok || !json || (json as any).ok === false) {
-      const msg = (json as any)?.error || `Request failed with status ${res.status}`;
+    const raw = (await res.json()) as unknown;
+
+    if (!res.ok) {
+      const r = (raw && typeof raw === "object" ? (raw as Record<string, unknown>) : null);
+      const msg =
+        (r && typeof r.error === "string" ? r.error : undefined) ||
+        `Request failed with status ${res.status}`;
       throw new Error(msg);
     }
-    return (json as any).data as T;
+
+    // Validate union shape and extract data
+    const r = (raw && typeof raw === "object" ? (raw as Record<string, unknown>) : null);
+    if (!r || r.ok !== true || !("data" in r)) {
+      throw new Error("Malformed response");
+    }
+    return (r as { ok: true; data: T }).data;
   } finally {
     if (id) clearTimeout(id);
   }
@@ -514,7 +524,7 @@ export function useMintGate(options?: UseMintGateOptions): UseMintGateResult {
     try {
       const rec = await get(options.depositId);
       setDeposit(rec);
-    } catch (e) {
+    } catch {
       // Surface via error
     }
   }, [get, options?.depositId]);

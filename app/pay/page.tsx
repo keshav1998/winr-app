@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Button,
   Card,
@@ -29,8 +29,8 @@ export default function PayPage() {
 
   // Wallet & KYC
   const [walletConnected, setWalletConnected] = useState(false);
-  const [account, setAccount] = useState<`0x${string}` | null>(null);
-  const [kycApproved, setKycApproved] = useState(true); // assume approved for smoother demo
+  // removed unused mock account state
+  const kycApproved = true; // assume approved for smoother demo
 
   // Scanned QR & invoice
   const [scanned, setScanned] = useState(false);
@@ -68,23 +68,23 @@ export default function PayPage() {
   const remaining = useMemo(() => amountINR - erupeePart - winrPart, [amountINR, erupeePart, winrPart]);
 
   useEffect(() => {
-    // Initialize default split when amount/balance changes or after scan
+    // Initialize default split when amount/balance changes
     const maxFromERupee = Math.min(eRupeeBalance, amountINR);
     const rest = Math.max(0, amountINR - maxFromERupee);
     setERupeePart(maxFromERupee);
     setWinrPart(rest);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [amountINR, eRupeeBalance, scanned]);
+  }, [amountINR, eRupeeBalance]);
 
   // Handlers
   const onMockConnect = () => {
     if (walletConnected) {
       setWalletConnected(false);
-      setAccount(null);
+      // removed unused account state update
       addToast({ kind: "info", title: "Disconnected", description: "Wallet disconnected." });
     } else {
       setWalletConnected(true);
-      setAccount("0x1234abcd5678ef901234abcd5678ef901234abcd");
+      // removed unused account state update
       addToast({
         kind: "success",
         title: "Connected",
@@ -96,6 +96,11 @@ export default function PayPage() {
   const onScanQR = () => {
     // In a real app, decode QR and fill merchant/amount/invoice/note.
     setScanned(true);
+    // Recompute split on scan to avoid unnecessary effect deps
+    const maxFromERupee = Math.min(eRupeeBalance, amountINR);
+    const rest = Math.max(0, amountINR - maxFromERupee);
+    setERupeePart(maxFromERupee);
+    setWinrPart(rest);
     addToast({
       kind: "success",
       title: "QR scanned",

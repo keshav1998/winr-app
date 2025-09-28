@@ -6,6 +6,7 @@ import { parseUnits, getWinrContract, prepareMint, prepareBurn, toTokenUnits } f
 import { useKyc, useDeposits, useMintGate } from "./hooks/useKyc";
 import { useToast } from "./(components)/feedback";
 
+
 export default function Home() {
   const { addToast } = useToast();
   const account = useActiveAccount();

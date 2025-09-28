@@ -235,8 +235,8 @@ export function encodeSwapCalldata(key: PoolKey, params: SwapParams, hookData: `
  * ============================ */
 
 export type PrepareSwapTxRequest = {
-  client: any;           // thirdweb client
-  chain: any;            // chain (e.g., sepolia from thirdweb/chains)
+  client: Parameters<typeof prepareTransaction>[0]["client"];           // thirdweb client
+  chain: Parameters<typeof prepareTransaction>[0]["chain"];             // chain (e.g., sepolia from thirdweb/chains)
   poolManager: Address;  // PoolManager address
   key: PoolKey;          // pool key
   params: SwapParams;    // swap params
@@ -438,18 +438,13 @@ export function isAddress(addr: string | null | undefined): addr is Address {
  * - This wrapper defers to app/lib/winr.ensureAllowance to compute and prepare an approval tx if needed.
  * - It returns either a prepared approval transaction (caller should send with useSendTransaction) or null if sufficient.
  */
-export type EnsureAllowanceBridgeParams = {
-  contract: unknown;     // Thirdweb contract instance for the ERC-20 token (getContract(...))
-  owner: Address;
-  spender: Address;
-  requiredAmount: bigint;
-};
+export type EnsureAllowanceBridgeParams = Parameters<typeof _ensureAllowance>[0];
 
 export async function ensureAllowanceBridge(params: EnsureAllowanceBridgeParams) {
   // Delegate to the shared helper; the concrete contract type is resolved at runtime in the app.
   // If approval is required, a prepared transaction object will be returned; otherwise null.
   // Caller is responsible to send the returned tx using thirdweb/react's useSendTransaction hook.
-  return _ensureAllowance(params as any);
+  return _ensureAllowance(params);
 }
 
 /* ============================

@@ -71,7 +71,7 @@ export type HexAddress = `0x${string}`;
 
 export type WinrContractConfig = {
   client: ThirdwebClient;
-  chain?: any; // relaxed for compatibility
+  chain?: typeof sepolia; // restrict to chain config type (e.g., sepolia)
   address?: HexAddress;
 };
 

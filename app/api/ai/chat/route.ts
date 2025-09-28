@@ -44,24 +44,20 @@ function requireEnv(name: string): string {
  * Validates minimal message schema to avoid forwarding malformed payloads upstream.
  */
 function validateMessages(messages: unknown): messages is ChatRequestBody["messages"] {
-  if (!Array.isArray(messages) || messages.length === 0) return false;
-  return messages.every((m) => {
-    if (!m || typeof m !== "object") return false;
-    const role = (m as any).role;
-    const content = (m as any).content;
-    if (!["system", "user", "assistant"].includes(role)) return false;
-    if (typeof content === "string") return true;
-    if (Array.isArray(content)) {
-      return content.every(
-        (c) =>
-          c &&
-          typeof c === "object" &&
-          c.type === "text" &&
-          typeof (c as any).text === "string",
-      );
-    }
-    return false;
-  });
+  const isRecord = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object";
+  const isRole = (v: unknown): v is "system" | "user" | "assistant" =>
+    v === "system" || v === "user" || v === "assistant";
+  const isTextPart = (v: unknown): v is { type: "text"; text: string } =>
+    isRecord(v) && v.type === "text" && typeof v.text === "string";
+  const isMessage = (v: unknown): v is ChatRequestBody["messages"][number] => {
+    if (!isRecord(v)) return false;
+    const role = v.role;
+    if (!isRole(role)) return false;
+    const content = v.content as unknown;
+    return typeof content === "string" || (Array.isArray(content) && content.every(isTextPart));
+  };
+
+  return Array.isArray(messages) && messages.length > 0 && messages.every(isMessage);
 }
 
 export async function POST(req: Request) {

@@ -244,7 +244,7 @@ export async function POST(request: Request) {
   if (!isValidAmount(body.amount)) {
     return jsonErr("Invalid or missing 'amount' (must be a positive number/string with up to 18 decimals)", 422);
   }
-  const amount = toAmountString(body.amount!);
+  const amount = toAmountString(body.amount as string | number);
 
   const currency =
     typeof body.currency === "string" && body.currency.trim() ? body.currency.trim().toUpperCase() : DEFAULT_CURRENCY;
@@ -280,7 +280,8 @@ export async function PATCH(request: Request) {
   const { id } = body;
   if (!id || !deposits.has(id)) return jsonErr("Missing or invalid 'id'", 422);
 
-  const rec = deposits.get(id)!;
+  const rec = deposits.get(id);
+  if (!rec) return jsonErr("Missing or invalid 'id'", 422);
 
   if (typeof body.status === "string") {
     const allowed: DepositStatus[] = ["pending", "confirming", "confirmed", "failed"];
