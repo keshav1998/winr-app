@@ -10,7 +10,7 @@
     "format": "biome format --write"
   },
   "dependencies": {
-    "thirdweb": "^5.108.3",
+    "thirdweb": "5.108.3",
     "next": "15.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0"
