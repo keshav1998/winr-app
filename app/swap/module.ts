@@ -27,6 +27,7 @@
  * - Uniswap v4 quoting: https://docs.uniswap.org/sdk/v4/guides/swaps/quoting
  * - Uniswap v4 single-hop swapping: https://docs.uniswap.org/sdk/v4/guides/swaps/single-hop-swapping
  */
+import { ensureAllowance as _ensureAllowance } from "../lib/winr";
 
 /* ============================
  * Types
@@ -347,6 +348,31 @@ export function isAddress(addr: string | null | undefined): addr is Address {
   if (!addr) return false;
   const a = addr.trim();
   return a.startsWith("0x") && a.length === 42;
+}
+
+/* ============================
+ * Allowance Bridge (calls app/lib/winr.ensureAllowance)
+ * ============================ */
+
+/**
+ * Ensure 'spender' has at least 'requiredAmount' allowance from 'owner' for the given ERC-20 token contract.
+ * Note:
+ * - Pass the token contract instance you already use in your app (e.g., wINR or selected token).
+ * - This wrapper defers to app/lib/winr.ensureAllowance to compute and prepare an approval tx if needed.
+ * - It returns either a prepared approval transaction (caller should send with useSendTransaction) or null if sufficient.
+ */
+export type EnsureAllowanceBridgeParams = {
+  contract: unknown;     // Thirdweb contract instance for the ERC-20 token (getContract(...))
+  owner: Address;
+  spender: Address;
+  requiredAmount: bigint;
+};
+
+export async function ensureAllowanceBridge(params: EnsureAllowanceBridgeParams) {
+  // Delegate to the shared helper; the concrete contract type is resolved at runtime in the app.
+  // If approval is required, a prepared transaction object will be returned; otherwise null.
+  // Caller is responsible to send the returned tx using thirdweb/react's useSendTransaction hook.
+  return _ensureAllowance(params as any);
 }
 
 /* ============================

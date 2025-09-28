@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ConnectButton, useActiveAccount, useWalletBalance } from "thirdweb/react";
+import { ConnectButton, useActiveAccount, useWalletBalance, useSendTransaction } from "thirdweb/react";
 import { client, DEFAULT_CHAIN } from "./thirdweb/client";
 import { parseUnits, getWinrContract, prepareMint, prepareBurn, toTokenUnits } from "./lib/winr";
 import { useKyc, useDeposits, useMintGate } from "./hooks/useKyc";
@@ -10,6 +10,7 @@ export default function Home() {
   const { addToast } = useToast();
   const account = useActiveAccount();
   const native = useWalletBalance({ client, chain: DEFAULT_CHAIN, address: account?.address });
+  const { mutate: sendTx, isPending: isSending } = useSendTransaction();
   const [fiatAmount, setFiatAmount] = useState<string>("");
   const [depositId, setDepositId] = useState<string | null>(null);
   const [fromToken, setFromToken] = useState<string>("wINR");
@@ -67,7 +68,22 @@ export default function Home() {
         return;
       }
       const tx = prepareMint({ contract, to, amount });
-      addToast({ kind: "success", title: "Mint prepared (stub)", description: "Prepared mint transaction. Integrate useSendTransaction to execute." });
+      sendTx(tx as any, {
+        onSuccess: (res) => {
+          addToast({
+            kind: "success",
+            title: "Mint sent",
+            description: `Tx submitted: ${res?.transactionHash ?? "check your wallet/tx list"}`,
+          });
+        },
+        onError: (err) => {
+          addToast({
+            kind: "error",
+            title: "Mint failed",
+            description: String((err as Error)?.message ?? err),
+          });
+        },
+      });
     } catch (e) {
       addToast({ kind: "error", title: "Mint error", description: String((e as Error).message) });
     }
@@ -190,7 +206,22 @@ export default function Home() {
         return;
       }
       const tx = prepareBurn({ contract, amount });
-      addToast({ kind: "success", title: "Burn prepared (stub)", description: "Prepared burn transaction. Integrate useSendTransaction to execute." });
+      sendTx(tx as any, {
+        onSuccess: (res) => {
+          addToast({
+            kind: "success",
+            title: "Burn sent",
+            description: `Tx submitted: ${res?.transactionHash ?? "check your wallet/tx list"}`,
+          });
+        },
+        onError: (err) => {
+          addToast({
+            kind: "error",
+            title: "Burn failed",
+            description: String((err as Error)?.message ?? err),
+          });
+        },
+      });
     } catch (e) {
       addToast({ kind: "error", title: "Redeem error", description: String((e as Error).message) });
     }
@@ -276,7 +307,7 @@ export default function Home() {
               <button type="button" className="rounded-md border px-3 py-2 text-sm" disabled={!kycApproved || !fiatAmount} onClick={onConfirmDeposit}>
                 Confirm Deposit
               </button>
-              <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm" disabled={!mintEnabled} onClick={onMint}>
+              <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm" disabled={!mintEnabled || isSending} onClick={onMint}>
                 Mint wINR
               </button>
             </div>
@@ -331,7 +362,7 @@ export default function Home() {
               value={redeemAmount}
               onChange={(e) => setRedeemAmount(e.target.value)}
             />
-            <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm" disabled={!kycApproved || !redeemAmount} onClick={onRedeem}>
+            <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm" disabled={!kycApproved || !redeemAmount || isSending} onClick={onRedeem}>
               Burn & Redeem e₹
             </button>
             <p className="text-xs text-foreground/60">

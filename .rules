@@ -2,21 +2,21 @@
 
 ## Overview
 
-Web app for wINR on Sepolia with thirdweb v5 and a Uniswap v4 pool+hook. Built with Next.js App Router, TypeScript, and Tailwind CSS. thirdweb handles wallet + ERC-20 interactions; Uniswap v4 handles swaps with a custom Hook attached to the pool.  ￼
+Web app for wINR on Sepolia with thirdweb v5 and a Uniswap v4 pool+hook. Built with Next.js App Router, TypeScript, and Tailwind CSS. thirdweb handles wallet + ERC-20 interactions; Uniswap v4 handles swaps with a custom Hook attached to the pool.
 
 ## Languages
-	•	TypeScript for the frontend and server routes. Viem requires TS ≥ 5.x.  ￼
+	•	TypeScript for the frontend and server routes. Viem requires TS ≥ 5.x.
 	•	Solidity for token, pool hook, and deployment scripts (lives in a separate repo or contracts folder if included).
 
 ## Tooling, Frameworks, and Key Libraries
-	•	Framework: Next.js (App Router). Use Server Components where practical.  ￼
-	•	UI/Styling: Tailwind CSS. Official Next.js guide used for setup.  ￼
-	•	Web3 SDK: thirdweb React SDK v5 for providers, hooks, and type-safe contract calls + extensions.  ￼
-	•	EVM Client: viem for PoolManager and low-level Uniswap v4 calls.  ￼
-	•	DEX: Uniswap v4 PoolManager + Hooks. Hook specified at pool creation via PoolManager.initialize.  ￼
+	•	Framework: Next.js (App Router). Use Server Components where practical.
+	•	UI/Styling: Tailwind CSS. Official Next.js guide used for setup.
+	•	Web3 SDK: thirdweb React SDK v5 for providers, hooks, and type-safe contract calls + extensions.
+	•	EVM Client: viem for PoolManager and low-level Uniswap v4 calls.
+	•	DEX: Uniswap v4 PoolManager + Hooks. Hook specified at pool creation via PoolManager.initialize.
 	•	Package Manager: npm. Project and package names must be lowercase.
 	•	Linter/Formatter: Biome (selected at scaffold).
-	•	Deployment: Vercel for CI/CD and hosting.  ￼
+	•	Deployment: Vercel for CI/CD and hosting.
 
 ## Project Structure (frontend)
 
@@ -52,8 +52,8 @@ styles/
   globals.css               # Tailwind base + design tokens
 
 # Contracts (reference)
-	•	Token: thirdweb Token (ERC-20) on Sepolia. Interact via v5 extensions like mintTo/burnFrom.  ￼
-	•	DEX: Uniswap v4 PoolManager + Hook attached to the wINR/WETH or wINR/USDC pool; hook enforces AML/KYC on beforeSwap / beforeModifyPosition.  ￼
+	•	Token: thirdweb Token (ERC-20) on Sepolia. Interact via v5 extensions like mintTo/burnFrom.
+	•	DEX: Uniswap v4 PoolManager + Hook attached to the wINR/WETH or wINR/USDC pool; hook enforces AML/KYC on beforeSwap / beforeModifyPosition.
 
 # Environment Variables (Vercel → Project Settings)
 
@@ -68,45 +68,45 @@ DATABASE_URL=...                             # if using a DB
 !!Note: Never expose private keys in NEXT_PUBLIC_*. Use server routes for privileged calls.!!
 
 ## Deployment & CI/CD
-	•	Vercel auto-builds on each git push and provides Preview URLs per PR. First-class Next.js support.  ￼
+	•	Vercel auto-builds on each git push and provides Preview URLs per PR. First-class Next.js support.
 	•	Build command: next build.
 	•	API routes run on the Node.js runtime (not Edge) when secrets are required.
 
 ## Core Flows (frontend ↔ backend)
-	1.	Connect: ThirdwebProvider + Connect UI; enforce Sepolia.  ￼
+	1.	Connect: ThirdwebProvider + Connect UI; enforce Sepolia.
 	2.	KYC Gate: UI checks /api/kyc before enabling actions.
 	3.	Deposit → Mint:
-	•	Backend records deposit intent → CBDC webhook confirms → /api/mint calls mintTo with thirdweb v5.  ￼
+	•	Backend records deposit intent → CBDC webhook confirms → /api/mint calls mintTo with thirdweb v5.
 	4.	Swap:
-	•	Approve PoolManager if needed → viem call to PoolManager.swap with pool key + hook data.  ￼
+	•	Approve PoolManager if needed → viem call to PoolManager.swap with pool key + hook data.
 	5.	Redeem:
 	•	User approve then server calls burnFrom and triggers off-chain payout.
 	6.	Airdrop: CSV upload → server iterates transfers or uses thirdweb airdrop contract.
 
 ## Style Guide
 	•	Naming: repo/package/project names lowercase and URL-safe.
-	•	UI System: Tailwind utility classes; semantic tokens for primary/neutral/success/error; responsive first.  ￼
-	•	Routing: App Router; use Server Components where possible; colocate route handlers in app/api/*.  ￼
+	•	UI System: Tailwind utility classes; semantic tokens for primary/neutral/success/error; responsive first.
+	•	Routing: App Router; use Server Components where possible; colocate route handlers in app/api/*.
 	•	State & UX:
 	•	Disable actions until prerequisites met (KYC, deposit).
 	•	Use loading states for tx; toast notifications for success/error.
 	•	Show on-chain links for tx hashes.
 	•	Web3 Patterns:
-	•	thirdweb v5 getContract + write extensions returning Transaction objects, then useSendTransaction in React or sendTransaction on server.  ￼
-	•	For v4, isolate PoolManager + Hook logic in lib/v4.ts; never bake DEX logic into token contract.  ￼
+	•	thirdweb v5 getContract + write extensions returning Transaction objects, then useSendTransaction in React or sendTransaction on server.
+	•	For v4, isolate PoolManager + Hook logic in lib/v4.ts; never bake DEX logic into token contract.
 
 ## Security & Compliance
 	•	Privileged writes (mint/burn/blacklist edits) execute only on server routes.
 	•	Validate inputs with zod; sanitize CSV uploads.
 	•	Enforce chain ID = Sepolia; prompt network switch if mismatched.
-	•	Hooks must revert unauthorized swaps/liquidity ops; test with both allowed and blocked addresses.  ￼
+	•	Hooks must revert unauthorized swaps/liquidity ops; test with both allowed and blocked addresses.
 
 ## Useful Doc Links
-	•	thirdweb React v5 docs and getting started.  ￼
-	•	thirdweb v5 extensions usage.  ￼
-	•	Uniswap v4 Hooks + PoolManager concepts.  ￼
-	•	Tailwind with Next.js.  ￼
-	•	Next.js App Router docs.  ￼
-	•	Vercel → Next.js deployment guide.  ￼
+	•	thirdweb React v5 docs and getting started.
+	•	thirdweb v5 extensions usage.
+	•	Uniswap v4 Hooks + PoolManager concepts.
+	•	Tailwind with Next.js.
+	•	Next.js App Router docs.
+	•	Vercel → Next.js deployment guide.
 
 ⸻
