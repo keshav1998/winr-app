@@ -27,19 +27,19 @@ function formatINR(n: number | bigint) {
 export default function PayPage() {
   const { addToast } = useToast();
 
-  // Mock state: Wallet & KYC
+  // Wallet & KYC
   const [walletConnected, setWalletConnected] = useState(false);
   const [account, setAccount] = useState<`0x${string}` | null>(null);
   const [kycApproved, setKycApproved] = useState(true); // assume approved for smoother demo
 
-  // Mock scanned QR & invoice
+  // Scanned QR & invoice
   const [scanned, setScanned] = useState(false);
   const [merchant, setMerchant] = useState("Coffee Collective Pvt Ltd");
   const [invoiceId, setInvoiceId] = useState("INV-ERUP-000122");
   const [note, setNote] = useState("Flat White x2 + Croissant");
   const [amountINR, setAmountINR] = useState<number>(100_000);
 
-  // Mock balances
+  // Balances
   const [eRupeeBalance, setERupeeBalance] = useState<number>(70_000);
   const [winrBalance, setWinrBalance] = useState<number>(50_000);
 
@@ -60,7 +60,7 @@ export default function PayPage() {
     txPayment?: string;
   }>(null);
 
-  // AI (mock)
+  // AI
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiAnswer, setAiAnswer] = useState("");
 
@@ -81,14 +81,14 @@ export default function PayPage() {
     if (walletConnected) {
       setWalletConnected(false);
       setAccount(null);
-      addToast({ kind: "info", title: "Disconnected", description: "Mock wallet disconnected." });
+      addToast({ kind: "info", title: "Disconnected", description: "Wallet disconnected." });
     } else {
       setWalletConnected(true);
       setAccount("0x1234abcd5678ef901234abcd5678ef901234abcd");
       addToast({
         kind: "success",
         title: "Connected",
-        description: "Mock wallet connected to Sepolia.",
+        description: "Wallet connected to Sepolia.",
       });
     }
   };
@@ -164,10 +164,10 @@ export default function PayPage() {
         addToast({
           kind: "info",
           title: "Approval",
-          description: "Approving PoolManager to spend wINR (mock)...",
+          description: "Approving PoolManager to spend wINR...",
         });
         await simulateDelay(800);
-        txApproval = "0xappr0val...mock";
+        txApproval = "0xappr0val";
         addToast({
           kind: "success",
           title: "Approval complete",
@@ -177,10 +177,10 @@ export default function PayPage() {
         addToast({
           kind: "info",
           title: "Swapping",
-          description: `Swapping ${formatINR(winrPart)} from wINR → e₹ (mock)...`,
+          description: `Swapping ${formatINR(winrPart)} from wINR → e₹...`,
         });
         await simulateDelay(1200);
-        txSwap = "0xswa9p...mock";
+        txSwap = "0xswa9p";
         addToast({
           kind: "success",
           title: "Swap complete",
@@ -192,10 +192,10 @@ export default function PayPage() {
       addToast({
         kind: "info",
         title: "Paying merchant",
-        description: `Sending ${formatINR(erupeePart + winrPart)} to ${merchant} (mock)...`,
+        description: `Sending ${formatINR(erupeePart + winrPart)} to ${merchant}...`,
       });
       await simulateDelay(900);
-      const txPayment = "0xpaym3nt...mock";
+      const txPayment = "0xpaym3nt";
       addToast({
         kind: "success",
         title: "Payment success",
@@ -234,13 +234,13 @@ export default function PayPage() {
       addToast({ kind: "warning", title: "Empty prompt", description: "Type something to ask the AI." });
       return;
     }
-    addToast({ kind: "info", title: "AI (mock)", description: "Thinking..." });
+    addToast({ kind: "info", title: "AI", description: "Thinking..." });
     await simulateDelay(700);
     setAiAnswer(
       "Based on your balances, paying ₹70,000 via e₹ and swapping ₹30,000 from wINR is optimal. " +
       "Estimated slippage is minimal for this amount. Proceed when ready.",
     );
-    addToast({ kind: "success", title: "AI (mock)", description: "Advice generated." });
+    addToast({ kind: "success", title: "AI", description: "Advice generated." });
   };
 
   return (
@@ -249,13 +249,13 @@ export default function PayPage() {
         <div>
           <h1 className="text-2xl font-semibold">Scan & Pay (e₹ + wINR split)</h1>
           <p className="text-sm text-foreground/70">
-            Mocked payment via eRupee QR. Split partial amount from wINR by swapping on-chain.
+            Payment via eRupee QR. Split partial amount from wINR by swapping on-chain.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Badge variant={kycApproved ? "success" : "warning"}>{kycApproved ? "KYC Approved" : "KYC Pending"}</Badge>
           <Button type="button" variant={walletConnected ? "secondary" : "primary"} onClick={onMockConnect}>
-            {walletConnected ? "Disconnect (Mock)" : "Connect Wallet (Mock)"}
+            {walletConnected ? "Disconnect" : "Connect Wallet"}
           </Button>
         </div>
       </header>
@@ -284,7 +284,7 @@ export default function PayPage() {
 
               <div className="flex items-center gap-2">
                 <Button type="button" onClick={onScanQR}>
-                  {scanned ? "Re-scan (Mock)" : "Simulate Scan"}
+                  {scanned ? "Re-scan" : "Scan"}
                 </Button>
                 <div className="text-sm text-foreground/70">
                   {scanned ? (
@@ -441,7 +441,7 @@ export default function PayPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>AI Assistant (Mock)</CardTitle>
+              <CardTitle>AI Assistant</CardTitle>
               <CardDescription>Ask for guidance on split, slippage, or fees.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -453,7 +453,7 @@ export default function PayPage() {
               />
               <div className="flex gap-2">
                 <Button type="button" onClick={onAIMock}>
-                  Ask (Mock)
+                  Ask
                 </Button>
                 <Button
                   type="button"

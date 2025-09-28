@@ -8,7 +8,7 @@
  * - useDeposits: create & poll deposits until readyToMint, list deposits
  * - useMintGate: compose KYC + Deposits to compute "mintEnabled"
  *
- * These hooks target the mock API routes:
+ * These hooks target the API routes:
  *  - /api/kyc
  *  - /api/deposits
  *
@@ -171,7 +171,7 @@ export type UseKycResult = {
   canMint: boolean;
   canSwap: boolean;
   canRedeem: boolean;
-  // Admin helpers (mock API)
+  // Admin helpers (in-memory API)
   setStatus: (status: KYCStatus, notes?: string) => Promise<void>;
   reset: () => Promise<void>;
 };

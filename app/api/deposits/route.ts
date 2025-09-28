@@ -2,9 +2,9 @@
 import { NextResponse } from "next/server";
 
 /**
- * Mock Deposits API (in-memory, polling-ready)
+ * Deposits API (in-memory, polling-ready, development)
  *
- * This route simulates a fiat deposit flow that becomes "ready to mint" after a short delay.
+ * This route provides an in-memory deposit flow that becomes "ready to mint" after a short delay.
  * It enables the frontend to poll for deposit readiness and then enable the "Mint" button.
  *
  * Endpoints:
@@ -44,7 +44,7 @@ type DepositRecord = {
   readyToMint: boolean;
   createdAt: string; // ISO
   updatedAt: string; // ISO
-  confirmations?: number; // mock field
+  confirmations?: number; // development field
   notes?: string;
   // Optional refs
   fiatRefId?: string; // e.g., bank reference

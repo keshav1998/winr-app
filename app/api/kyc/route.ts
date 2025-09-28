@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 
 /**
- * Mock KYC API (in-memory)
+ * KYC API (in-memory, development)
  *
  * This route provides a simple in-memory KYC state keyed by EVM address.
  * - GET /api/kyc?address=0x...   -> Fetch KYC status for a single address (or list all when no address provided)
@@ -11,8 +11,8 @@ import { NextResponse } from "next/server";
  * - DELETE /api/kyc              -> Remove a record ({ address })
  *
  * NOTE:
- * - This is a mock for development only. State is in-memory and resets on server restart.
- * - Uses globalThis to minimize resets during hot-reload in dev.
+ * - This endpoint is intended for development only. State is in-memory and resets on server restart.
+ * - Uses globalThis to minimize resets during hot-reload in development.
  * - No authentication is implemented. Do not use in production.
  */
 

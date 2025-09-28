@@ -20,10 +20,10 @@ import {
  * Admin Dashboard
  * - Roles Management (localStorage-persisted demo)
  * - Allow / Deny Lists with CSV upload (localStorage-persisted demo)
- * - KYC Management via mock API (/api/kyc)
+ * - KYC Management via in-memory API (/api/kyc)
  *
  * NOTE: Roles/Allow/Deny here are local-only demo states.
- * KYC uses in-memory mock API routes provided by the app.
+ * KYC uses in-memory API routes provided by the app.
  */
 
 /* =========================================
@@ -99,7 +99,7 @@ async function fetchJson<T>(
     cache: "no-store",
   });
   const json = await res.json();
-  // Our mock API wraps with { ok, data }, both for GET and mutations
+  // The API wraps with { ok, data }, both for GET and mutations
   if (!res.ok || json?.ok === false) {
     const msg = json?.error || `Request failed with status ${res.status}`;
     throw new Error(msg);
@@ -678,7 +678,7 @@ export default function AdminPage() {
           <CardHeader>
             <CardTitle>KYC Management</CardTitle>
             <CardDescription>
-              Uses in-memory mock API (/api/kyc). Initialize, update, and delete KYC records.
+              Uses an in-memory API (/api/kyc). Initialize, update, and delete KYC records.
             </CardDescription>
           </CardHeader>
           <CardContent>
