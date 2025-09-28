@@ -17,6 +17,9 @@ export default function Home() {
   const [toToken, setToToken] = useState<string>("ETH");
   const [swapAmount, setSwapAmount] = useState<string>("");
   const [redeemAmount, setRedeemAmount] = useState<string>("");
+  const [aiPrompt, setAiPrompt] = useState<string>("");
+  const [aiResponse, setAiResponse] = useState<string>("");
+  const [aiLoading, setAiLoading] = useState<boolean>(false);
 
   const { kycApproved, kycStatus } = useKyc();
   const { create } = useDeposits();
@@ -333,6 +336,54 @@ export default function Home() {
     }
   };
 
+  // Simple client for the Blockchain LLM route
+  const onAskAI = async () => {
+    if (!aiPrompt.trim()) {
+      addToast({
+        kind: "warning",
+        title: "Empty prompt",
+        description: "Type a question or instruction for the Blockchain LLM.",
+      });
+      return;
+    }
+    setAiLoading(true);
+    setAiResponse("");
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: aiPrompt }],
+          model: "thirdweb",
+        }),
+      });
+
+      if (!res.ok || !res.body) {
+        throw new Error(`Chat request failed (${res.status})`);
+      }
+
+      // Consume streaming response (text/event or chunked plain text)
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        // Append raw chunk; for SSE you could parse "data:" lines for finer control.
+        setAiResponse((prev) => prev + chunk);
+      }
+    } catch (err) {
+      addToast({
+        kind: "error",
+        title: "AI request failed",
+        description: String((err as Error)?.message ?? err),
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen p-6 sm:p-10">
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
@@ -474,6 +525,52 @@ export default function Home() {
             <p className="text-xs text-foreground/60">
               After burning, backend sends CBDC to your linked account.
             </p>
+          </div>
+        </section>
+      </div>
+
+      {/* AI Assistant (Blockchain LLM) */}
+      <div className="mt-6 grid grid-cols-1">
+        <section className="rounded-xl border border-black/10 dark:border-white/10 p-4">
+          <h2 className="font-medium mb-3">AI Assistant (Blockchain LLM)</h2>
+          <div className="space-y-3">
+            <textarea
+              placeholder="Ask to prepare a transfer, quote a swap, or analyze a tx..."
+              className="w-full min-h-[100px] rounded-md border px-3 py-2 text-sm bg-transparent"
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="rounded-md bg-foreground text-background px-3 py-2 text-sm"
+                onClick={onAskAI}
+                disabled={aiLoading || !aiPrompt.trim()}
+              >
+                {aiLoading ? "Asking..." : "Ask"}
+              </button>
+              <button
+                type="button"
+                className="rounded-md border px-3 py-2 text-sm"
+                onClick={() => {
+                  setAiPrompt("");
+                  setAiResponse("");
+                }}
+                disabled={aiLoading}
+              >
+                Clear
+              </button>
+            </div>
+
+            <div className="rounded-md border border-black/10 dark:border-white/10 p-3 text-sm">
+              {aiResponse ? (
+                <pre className="whitespace-pre-wrap break-words">{aiResponse}</pre>
+              ) : (
+                <span className="text-foreground/60">
+                  The response will appear here. Connect your wallet for authenticated flows.
+                </span>
+              )}
+            </div>
           </div>
         </section>
       </div>
