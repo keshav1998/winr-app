@@ -15,6 +15,7 @@ export default function Home() {
           <p className="text-sm text-foreground/70">
             Connect your wallet to view account info, balances, and chain.
           </p>
+
         </section>
 
         <section className="col-span-1 rounded-xl border border-black/10 dark:border-white/10 p-4">
@@ -31,10 +32,10 @@ export default function Home() {
         <section className="col-span-1 rounded-xl border border-black/10 dark:border-white/10 p-4">
           <h2 className="font-medium mb-3">Admin</h2>
           <div className="flex gap-2">
-            <button className="rounded-md bg-foreground text-background px-3 py-2 text-sm">
+            <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm">
               View Roles
             </button>
-            <button className="rounded-md border px-3 py-2 text-sm">
+            <button type="button" className="rounded-md border px-3 py-2 text-sm">
               Manage Lists
             </button>
           </div>
@@ -55,10 +56,10 @@ export default function Home() {
               disabled
             />
             <div className="flex gap-2">
-              <button className="rounded-md border px-3 py-2 text-sm" disabled>
+              <button type="button" className="rounded-md border px-3 py-2 text-sm" disabled>
                 Confirm Deposit
               </button>
-              <button className="rounded-md bg-foreground text-background px-3 py-2 text-sm" disabled>
+              <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm" disabled>
                 Mint wINR
               </button>
             </div>
@@ -88,7 +89,7 @@ export default function Home() {
               placeholder="Amount"
               className="w-full rounded-md border px-3 py-2 text-sm bg-transparent"
             />
-            <button className="rounded-md bg-foreground text-background px-3 py-2 text-sm">
+            <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm">
               Get Quote & Swap
             </button>
             <p className="text-xs text-foreground/60">
@@ -105,7 +106,7 @@ export default function Home() {
               placeholder="Amount (wINR)"
               className="w-full rounded-md border px-3 py-2 text-sm bg-transparent"
             />
-            <button className="rounded-md bg-foreground text-background px-3 py-2 text-sm">
+            <button type="button" className="rounded-md bg-foreground text-background px-3 py-2 text-sm">
               Burn & Redeem e₹
             </button>
             <p className="text-xs text-foreground/60">
