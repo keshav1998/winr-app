@@ -1,5 +1,5 @@
 /**
- * Uniswap v4 Swap Module (Lazy-loadable Stub)
+ * Uniswap v4 Swap Module (PoolManager + viem)
  *
  * Purpose:
  * - Provide a placeholder-safe quote and swap flow interface that you can lazy-load in the UI.
@@ -27,6 +27,8 @@
  * - Uniswap v4 quoting: https://docs.uniswap.org/sdk/v4/guides/swaps/quoting
  * - Uniswap v4 single-hop swapping: https://docs.uniswap.org/sdk/v4/guides/swaps/single-hop-swapping
  */
+import { parseAbi, encodeFunctionData } from "viem";
+import { prepareTransaction } from "thirdweb";
 import { ensureAllowance as _ensureAllowance } from "../lib/winr";
 
 /* ============================
@@ -176,6 +178,81 @@ function computeMinOut(amountOut: bigint, slippageBps: number): bigint {
   const penalty = mulDiv(amountOut, bps, denom);
   const result = amountOut - penalty;
   return result < 0n ? 0n : result;
+}
+
+/* ============================
+ * PoolManager ABI + helpers (viem)
+ * ============================ */
+
+/**
+ * Minimal PoolManager ABI for swap, using poolKey + params + hookData.
+ * NOTE:
+ * - poolKey and params encodings follow v4 conventions. You must supply correct values.
+ * - Returns a BalanceDelta(int128, int128). We encode only to get calldata; we don't decode here.
+ */
+export const POOLMANAGER_ABI = parseAbi([
+  "function swap((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key,(bool zeroForOne,int256 amountSpecified,uint160 sqrtPriceLimitX96) params,bytes hookData) returns (int128 delta0,int128 delta1)"
+]);
+
+export type PoolKey = {
+  currency0: Address;
+  currency1: Address;
+  fee: number;          // uint24
+  tickSpacing: number;  // int24
+  hooks: Address;
+};
+
+export type SwapParams = {
+  zeroForOne: boolean;
+  amountSpecified: bigint;       // positive exact input, negative exact output per v4 conventions
+  sqrtPriceLimitX96: bigint;     // safety limit; set to 0 for "no limit" is NOT recommended
+};
+
+export function encodeSwapCalldata(key: PoolKey, params: SwapParams, hookData: `0x${string}` = "0x") {
+  return encodeFunctionData({
+    abi: POOLMANAGER_ABI,
+    functionName: "swap",
+    args: [
+      {
+        currency0: key.currency0,
+        currency1: key.currency1,
+        fee: key.fee,
+        tickSpacing: key.tickSpacing,
+        hooks: key.hooks,
+      },
+      {
+        zeroForOne: params.zeroForOne,
+        amountSpecified: params.amountSpecified,
+        sqrtPriceLimitX96: params.sqrtPriceLimitX96,
+      },
+      hookData,
+    ],
+  });
+}
+
+/* ============================
+ * Prepare PoolManager.swap transaction (thirdweb prepared transaction)
+ * ============================ */
+
+export type PrepareSwapTxRequest = {
+  client: any;           // thirdweb client
+  chain: any;            // chain (e.g., sepolia from thirdweb/chains)
+  poolManager: Address;  // PoolManager address
+  key: PoolKey;          // pool key
+  params: SwapParams;    // swap params
+  hookData?: `0x${string}`;
+  value?: bigint;        // optional native value
+};
+
+export function prepareSwapTransaction(req: PrepareSwapTxRequest) {
+  const data = encodeSwapCalldata(req.key, req.params, req.hookData ?? "0x");
+  return prepareTransaction({
+    to: req.poolManager,
+    data,
+    client: req.client,
+    chain: req.chain,
+    value: req.value,
+  });
 }
 
 /* ============================

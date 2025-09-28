@@ -99,7 +99,7 @@ export default function Home() {
       return;
     }
     try {
-      const { getQuote, prepareSwap, formatToken } = await import("./swap/module");
+      const { getQuote, prepareSwapTransaction, ensureAllowanceBridge, formatToken, getMinAmountOutForUI } = await import("./swap/module");
       const winrAddr = (process.env.NEXT_PUBLIC_WINR_TOKEN_ADDRESS ?? "").trim();
       if (!winrAddr || !winrAddr.startsWith("0x") || winrAddr.length !== 42) {
         addToast({
@@ -152,32 +152,138 @@ export default function Home() {
         });
         return;
       }
-      const prep = await prepareSwap({
-        inputToken,
-        outputToken,
-        amountIn,
-        account: acct,
+      // Compute min received using current slippage preference for UI transparency
+      const minOut = getMinAmountOutForUI(quote.amountOut, quote.slippageBps);
+      addToast({
+        kind: "info",
+        title: "Quote",
+        description: `${formatToken(quote.amountIn, inputToken.decimals)} ${inputToken.symbol} -> ~${formatToken(
+          quote.amountOut,
+          outputToken.decimals,
+        )} ${outputToken.symbol} (min ${formatToken(minOut, outputToken.decimals)} @ ${quote.slippageBps / 100}%)`,
       });
-      if (!prep.ok) {
+
+      // Load PoolManager config
+      const poolManager = (process.env.NEXT_PUBLIC_UNISWAP_V4_POOLMANAGER_ADDRESS ?? "").trim();
+      if (!poolManager || !poolManager.startsWith("0x") || poolManager.length !== 42) {
         addToast({
           kind: "error",
-          title: "Swap prep failed",
-          description: prep.reason ?? "Unknown error during preparation.",
+          title: "Swap not configured",
+          description: "Set NEXT_PUBLIC_UNISWAP_V4_POOLMANAGER_ADDRESS in .env.local.",
         });
         return;
       }
-      if (prep.steps.length) {
-        addToast({
-          kind: "info",
-          title: "Swap Steps",
-          description: `Steps: ${prep.steps.map((s) => s.type).join(" → ")}`,
+      const hookAddress = (process.env.NEXT_PUBLIC_UNISWAP_V4_HOOK_ADDRESS ?? "0x0000000000000000000000000000000000000000").trim() as `0x${string}`;
+
+      // Assumptions for single-hop:
+      // - currency0 = input token, currency1 = output token (ensure your real pool ordering matches)
+      // - fee: 3000 (0.30%), tickSpacing: 60 (example). Adjust to your pool config.
+      const fee = 3000;
+      const tickSpacing = 60;
+
+      const zeroForOne = true; // exact input with inputToken -> outputToken direction (adjust if your currency ordering differs)
+
+      // 1) Ensure allowance if input is ERC-20 (skip if native)
+      if (fromToken.toUpperCase() !== "ETH") {
+        const inputErc20 = getWinrContract({ client, chain: DEFAULT_CHAIN, address: inputToken.address });
+        const approveTx = await ensureAllowanceBridge({
+          contract: inputErc20 as any,
+          owner: acct,
+          spender: poolManager as `0x${string}`,
+          requiredAmount: amountIn,
         });
+        if (approveTx) {
+          addToast({
+            kind: "info",
+            title: "Approving",
+            description: "Sending approval for PoolManager to spend input token...",
+          });
+          // send approval then proceed to swap
+          sendTx(approveTx as any, {
+            onSuccess: () => {
+              addToast({ kind: "success", title: "Approved", description: "Allowance updated. Proceeding to swap..." });
+              const prepared = prepareSwapTransaction({
+                client,
+                chain: DEFAULT_CHAIN,
+                poolManager: poolManager as `0x${string}`,
+                key: {
+                  currency0: inputToken.address,
+                  currency1: outputToken.address,
+                  fee,
+                  tickSpacing,
+                  hooks: hookAddress,
+                },
+                params: {
+                  zeroForOne,
+                  amountSpecified: amountIn,      // exact input (positive)
+                  // NOTE: choose an appropriate sqrtPriceLimitX96 for safety; 0 is not recommended, but used here as placeholder.
+                  sqrtPriceLimitX96: 0n,
+                },
+                hookData: "0x",
+              });
+              sendTx(prepared as any, {
+                onSuccess: (res) => {
+                  addToast({
+                    kind: "success",
+                    title: "Swap sent",
+                    description: `Tx submitted: ${res?.transactionHash ?? "check your wallet/tx list"}`,
+                  });
+                },
+                onError: (err) => {
+                  addToast({
+                    kind: "error",
+                    title: "Swap failed",
+                    description: String((err as Error)?.message ?? err),
+                  });
+                },
+              });
+            },
+            onError: (err) => {
+              addToast({
+                kind: "error",
+                title: "Approval failed",
+                description: String((err as Error)?.message ?? err),
+              });
+            },
+          });
+          return; // wait for approval callback flow to continue swap
+        }
       }
-      addToast({
-        kind: "warning",
-        title: "Stub",
-        description:
-          "Swap execution is not wired yet. Integrate Uniswap v4 transactions (viem + PoolManager) to execute.",
+
+      // 2) No approval needed or already sufficient — prepare and send the swap
+      const prepared = prepareSwapTransaction({
+        client,
+        chain: DEFAULT_CHAIN,
+        poolManager: poolManager as `0x${string}`,
+        key: {
+          currency0: inputToken.address,
+          currency1: outputToken.address,
+          fee,
+          tickSpacing,
+          hooks: hookAddress,
+        },
+        params: {
+          zeroForOne,
+          amountSpecified: amountIn,      // exact input
+          sqrtPriceLimitX96: 0n,
+        },
+        hookData: "0x",
+      });
+      sendTx(prepared as any, {
+        onSuccess: (res) => {
+          addToast({
+            kind: "success",
+            title: "Swap sent",
+            description: `Tx submitted: ${res?.transactionHash ?? "check your wallet/tx list"}`,
+          });
+        },
+        onError: (err) => {
+          addToast({
+            kind: "error",
+            title: "Swap failed",
+            description: String((err as Error)?.message ?? err),
+          });
+        },
       });
     } catch (e) {
       addToast({
